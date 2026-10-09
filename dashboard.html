@@ -165,7 +165,7 @@
     <script>
         async function carregarDados(mes = '') {
             try {
-                const url = mes ? `http://127.0.0.1:5000/api/dados?mes=${encodeURIComponent(mes)}` : 'http://127.0.0.1:5000/api/dados';
+                const url = mes ? `/api/dados?mes=${encodeURIComponent(mes)}` : '/api/dados';
                 const resposta = await fetch(url);
                 const dados = await resposta.json();
 
