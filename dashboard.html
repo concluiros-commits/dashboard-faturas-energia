@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Faturas de Energia</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
+        body { background-color: #f4f7f6; color: #333; padding: 20px; }
+        
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        h1 { font-size: 24px; color: #1e293b; }
+        
+        /* Seletor de Mês */
+        .select-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #fff;
+            padding: 8px 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .select-container label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .select-container select {
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            font-size: 14px;
+            outline: none;
+            cursor: pointer;
+            background-color: #f8fafc;
+        }
+
+        /* Grid de Cards */
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .card { background: #fff; padding: 18px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 5px solid #0284c7; }
+        .card h3 { font-size: 12px; color: #64748b; text-transform: uppercase; margin-bottom: 5px; }
+        .card p { font-size: 18px; font-weight: bold; color: #0f172a; }
+
+        /* Container da Tabela */
+        .table-container { 
+            background: #fff; 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+        }
+        .table-container h2 {
+            font-size: 18px;
+            color: #1e293b;
+            margin-bottom: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th {
+            background-color: #0284c7;
+            color: #ffffff;
+            text-align: left;
+            padding: 12px 15px;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 10px 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        tbody tr:nth-child(even) { background-color: #f8fafc; }
+        tbody tr:hover { background-color: #f1f5f9; }
+
+        .text-right { text-align: right; }
+
+        tfoot tr {
+            background-color: #e2e8f0;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-container">
+        <h1>⚡ Dashboard de Faturas de Energia</h1>
+        
+        <!-- Seletor Dinâmico de Mês/Aba -->
+        <div class="select-container">
+            <label for="seletor-mes">Selecione o Mês:</label>
+            <select id="seletor-mes" onchange="trocarMes(this.value)">
+                <!-- Opções carregadas via JS -->
+            </select>
+        </div>
+    </div>
+
+    <!-- Cards dos Indicadores (KPIs) -->
+    <div class="kpi-grid">
+        <div class="card">
+            <h3>Total Bruto Faturas</h3>
+            <p id="kpi-bruto">R$ 0,00</p>
+        </div>
+        <div class="card" style="border-color: #10b981;">
+            <h3>Total Líquido Faturas</h3>
+            <p id="kpi-liquido">R$ 0,00</p>
+        </div>
+        <div class="card" style="border-color: #f59e0b;">
+            <h3>Provisionado (Mês)</h3>
+            <p id="kpi-provisionado">R$ 0,00</p>
+        </div>
+        <!-- NOVO CARD ADICIONADO ABAIXO -->
+        <div class="card" style="border-color: #0284c7;">
+            <h3>Faturas que entraram em Outubro</h3>
+            <p id="kpi-outubro">R$ 0,00</p>
+        </div>
+        <div class="card" style="border-color: #6366f1;">
+            <h3>Com Reversão</h3>
+            <p id="kpi-reversao">R$ 0,00</p>
+        </div>
+        <div class="card" style="border-color: #ef4444;">
+            <h3>Total Provisionado Geral</h3>
+            <p id="kpi-provisionado-geral">R$ 0,00</p>
+        </div>
+    </div>
+
+    <!-- Tabela Estilo Excel de Faturas -->
+    <div class="table-container">
+        <h2>📑 Detalhamento por Nota Fiscal</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nota Fiscal</th>
+                    <th class="text-right">Valor Bruto</th>
+                    <th class="text-right">Valor Líquido</th>
+                </tr>
+            </thead>
+            <tbody id="tabela-faturas-corpo">
+                <!-- Linhas preenchidas via JavaScript -->
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td>TOTAL</td>
+                    <td class="text-right" id="foot-total-bruto">R$ 0,00</td>
+                    <td class="text-right" id="foot-total-liquido">R$ 0,00</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <script>
+        async function carregarDados(mes = '') {
+            try {
+                const url = mes ? `http://127.0.0.1:5000/api/dados?mes=${encodeURIComponent(mes)}` : 'http://127.0.0.1:5000/api/dados';
+                const resposta = await fetch(url);
+                const dados = await resposta.json();
+
+                if (dados.status === 'sucesso') {
+                    // Atualiza as opções do seletor de mês dinamicamente
+                    const seletor = document.getElementById('seletor-mes');
+                    
+                    // Preenche o dropdown apenas na primeira carga ou se o número de abas mudar
+                    if (seletor.children.length !== dados.abas_disponiveis.length) {
+                        seletor.innerHTML = '';
+                        dados.abas_disponiveis.forEach(aba => {
+                            const option = document.createElement('option');
+                            option.value = aba;
+                            option.textContent = aba;
+                            if (aba === dados.aba_atual) option.selected = true;
+                            seletor.appendChild(option);
+                        });
+                    }
+
+                    // Atualizar Cards
+                    document.getElementById('kpi-bruto').innerText = dados.kpis.total_bruto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                    document.getElementById('kpi-liquido').innerText = dados.kpis.total_liquido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                    document.getElementById('kpi-provisionado').innerText = dados.kpis.provisionado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                    // NOVO: Atualiza a soma total acumulada de todas as abas
+                    document.getElementById('kpi-provisionado-geral').innerText = dados.kpis.provisionado_geral.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                    document.getElementById('kpi-outubro').innerText = dados.kpis.outubro_total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                    document.getElementById('kpi-reversao').innerText = dados.kpis.reversao.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+                    // Preencher Tabela
+                    const corpoTabela = document.getElementById('tabela-faturas-corpo');
+                    corpoTabela.innerHTML = '';
+
+                    dados.faturas.forEach(item => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td><b>${item.nota}</b></td>
+                            <td class="text-right">${item.bruto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                            <td class="text-right">${item.liquido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                        `;
+                        corpoTabela.appendChild(tr);
+                    });
+
+                    // Totais no Rodapé da Tabela
+                    document.getElementById('foot-total-bruto').innerText = dados.kpis.total_bruto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                    document.getElementById('foot-total-liquido').innerText = dados.kpis.total_liquido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                }
+            } catch (erro) {
+                console.error("Certifique-se de que o script Python (app.py) está em execução:", erro);
+            }
+        }
+
+        function trocarMes(mesSelecionado) {
+            carregarDados(mesSelecionado);
+        }
+
+        // Executa ao carregar a página
+        carregarDados();
+    </script>
+</body>
+</html>
