@@ -12,8 +12,9 @@ def obter_dados():
     try:
         wb = openpyxl.load_workbook(NOME_ARQUIVO, data_only=True)
         
-        # Filtra todas as abas que não sejam 'TOTAL'
-        abas_disponiveis = [sheet for sheet in wb.sheetnames if sheet.upper().strip() != 'TOTAL']
+        # Filtra abas indesejadas (ignorando 'TOTAL' e 'STATUS')
+        abas_ignoradas = ['TOTAL', 'STATUS']
+        abas_disponiveis = [sheet for sheet in wb.sheetnames if sheet.upper().strip() not in abas_ignoradas]
         
         if not abas_disponiveis:
             return jsonify({'status': 'erro', 'mensagem': 'Nenhuma aba válida encontrada na planilha.'}), 400
