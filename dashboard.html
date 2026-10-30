@@ -123,10 +123,6 @@
             <h3>Provisionado (Mês)</h3>
             <p id="kpi-provisionado">R$ 0,00</p>
         </div>
-        <div class="card" style="border-color: #6366f1;">
-            <h3>Com Reversão</h3>
-            <p id="kpi-reversao">R$ 0,00</p>
-        </div>
         <div class="card" style="border-color: #ef4444;">
             <h3>Total Provisionado Geral</h3>
             <p id="kpi-provisionado-geral">R$ 0,00</p>
@@ -165,10 +161,9 @@
                 const dados = await resposta.json();
 
                 if (dados.status === 'sucesso') {
-                    // Atualiza as opções do seletor de mês dinamicamente
+                    // Atualiza as opções do seletor de mês
                     const seletor = document.getElementById('seletor-mes');
                     
-                    // Preenche o dropdown apenas na primeira carga ou se o número de abas mudar
                     if (seletor.children.length !== dados.abas_disponiveis.length) {
                         seletor.innerHTML = '';
                         dados.abas_disponiveis.forEach(aba => {
@@ -180,35 +175,36 @@
                         });
                     }
 
-                    // Atualizar Cards
+                    // Atualizar Cards Existentes
                     document.getElementById('kpi-bruto').innerText = dados.kpis.total_bruto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
                     document.getElementById('kpi-liquido').innerText = dados.kpis.total_liquido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
                     document.getElementById('kpi-provisionado').innerText = dados.kpis.provisionado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-                    // NOVO: Atualiza a soma total acumulada de todas as abas
                     document.getElementById('kpi-provisionado-geral').innerText = dados.kpis.provisionado_geral.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-                    document.getElementById('kpi-outubro').innerText = dados.kpis.outubro_total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-                    document.getElementById('kpi-reversao').innerText = dados.kpis.reversao.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
                     // Preencher Tabela
                     const corpoTabela = document.getElementById('tabela-faturas-corpo');
                     corpoTabela.innerHTML = '';
 
-                    dados.faturas.forEach(item => {
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td><b>${item.nota}</b></td>
-                            <td class="text-right">${item.bruto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
-                            <td class="text-right">${item.liquido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
-                        `;
-                        corpoTabela.appendChild(tr);
-                    });
+                    if (dados.faturas && dados.faturas.length > 0) {
+                        dados.faturas.forEach(item => {
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td><b>${item.nota}</b></td>
+                                <td class="text-right">${item.bruto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                <td class="text-right">${item.liquido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                            `;
+                            corpoTabela.appendChild(tr);
+                        });
+                    } else {
+                        corpoTabela.innerHTML = '<tr><td colspan="3" style="text-align:center;">Nenhuma fatura encontrada.</td></tr>';
+                    }
 
-                    // Totais no Rodapé da Tabela
+                    // Totais no Rodapé
                     document.getElementById('foot-total-bruto').innerText = dados.kpis.total_bruto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
                     document.getElementById('foot-total-liquido').innerText = dados.kpis.total_liquido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
                 }
             } catch (erro) {
-                console.error("Certifique-se de que o script Python (app.py) está em execução:", erro);
+                console.error("Erro ao carregar dados:", erro);
             }
         }
 
